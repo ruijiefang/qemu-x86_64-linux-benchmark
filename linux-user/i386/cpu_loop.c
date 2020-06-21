@@ -21,7 +21,7 @@
 #include "qemu-common.h"
 #include "qemu.h"
 #include "cpu_loop-common.h"
-
+#include <linux/unistd.h>
 /***********************************************************/
 /* CPUX86 core interface */
 
@@ -228,6 +228,11 @@ void cpu_loop(CPUX86State *env)
             break;
 #ifndef TARGET_ABI32
         case EXCP_SYSCALL:
+            /* ruijief: capture exit syscall here and call our own
+             * exit handler instead of the target program's exit handler */
+            if ((env->regs[R_EAX]== __NR_exit_group) 
+                || (env->regs[R_EAX] == __NR_exit)) { /* return from loop */ return; }
+            /* ruijief: otherwise, do a normal syscall. */
             /* linux syscall from syscall instruction */
             ret = do_syscall(env,
                              env->regs[R_EAX],
